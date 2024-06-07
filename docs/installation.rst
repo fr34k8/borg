@@ -43,7 +43,7 @@ package which can be installed with the package manager.
 Distribution Source                                        Command
 ============ ============================================= =======
 Alpine Linux `Alpine repository`_                          ``apk add borgbackup``
-Arch Linux   `[community]`_                                ``pacman -S borg``
+Arch Linux   `[extra]`_                                    ``pacman -S borg``
 Debian       `Debian packages`_                            ``apt install borgbackup``
 Gentoo       `ebuild`_                                     ``emerge borgbackup``
 GNU Guix     `GNU Guix`_                                   ``guix package --install borg``
@@ -64,7 +64,7 @@ Ubuntu       `Ubuntu packages`_, `Ubuntu PPA`_             ``apt install borgbac
 ============ ============================================= =======
 
 .. _Alpine repository: https://pkgs.alpinelinux.org/packages?name=borgbackup
-.. _[community]: https://www.archlinux.org/packages/?name=borg
+.. _[extra]: https://www.archlinux.org/packages/?name=borg
 .. _Debian packages: https://packages.debian.org/search?keywords=borgbackup&searchon=names&exact=1&suite=all&section=all
 .. _Fedora official repository: https://packages.fedoraproject.org/pkgs/borgbackup/borgbackup/
 .. _FreeBSD ports: https://www.freshports.org/archivers/py-borgbackup/
@@ -236,7 +236,7 @@ Install the dependencies automatically using zypper::
 Alternatively, you can enumerate all build dependencies in the command line::
 
     sudo zypper install python3 python3-devel \
-    libacl-devel openssl-devel libxxhash-devel \
+    libacl-devel openssl-devel xxhash-devel libzstd-devel liblz4-devel \
     python3-Cython python3-Sphinx python3-msgpack-python python3-pkgconfig pkgconf \
     python3-pytest python3-setuptools python3-setuptools_scm \
     python3-sphinx_rtd_theme gcc gcc-c++
