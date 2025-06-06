@@ -134,7 +134,7 @@ class BenchmarkMixIn:
         key_96 = os.urandom(12)
 
         import io
-        from ..chunker import get_chunker
+        from ..chunkers import get_chunker
 
         print("Chunkers =======================================================")
         size = "1GB"
@@ -146,7 +146,7 @@ class BenchmarkMixIn:
                     pass
 
         for spec, func in [
-            ("buzhash,19,23,21,4095", lambda: chunkit("buzhash", 19, 23, 21, 4095, seed=0)),
+            ("buzhash,19,23,21,4095", lambda: chunkit("buzhash", 19, 23, 21, 4095, seed=0, sparse=False)),
             ("fixed,1048576", lambda: chunkit("fixed", 1048576, sparse=False)),
         ]:
             print(f"{spec:<24} {size:<10} {timeit(func, number=100):.3f}s")
