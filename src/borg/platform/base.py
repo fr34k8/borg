@@ -2,6 +2,7 @@ import errno
 import os
 import socket
 import uuid
+from pathlib import Path
 
 from ..helpers import safe_unlink
 from ..platformflags import is_win32
@@ -21,6 +22,7 @@ are correctly composed into the base functionality.
 API_VERSION = "1.2_05"
 
 fdatasync = getattr(os, "fdatasync", os.fsync)
+has_posix_fadvise = hasattr(os, "posix_fadvise")
 
 from .xattr import ENOATTR
 
@@ -101,7 +103,7 @@ def sync_dir(path):
         # Opening directories is not supported on windows.
         # TODO: do we need to handle this in some other way?
         return
-    fd = os.open(path, os.O_RDONLY)
+    fd = os.open(str(path), os.O_RDONLY)
     try:
         os.fsync(fd)
     except OSError as os_error:
@@ -114,9 +116,11 @@ def sync_dir(path):
 
 
 def safe_fadvise(fd, offset, len, advice):
-    if hasattr(os, "posix_fadvise"):
+    if has_posix_fadvise:
         advice = getattr(os, "POSIX_FADV_" + advice)
         try:
+            # UNIX only and, in case of block sizes that are not a multiple of the system's page size,
+            # better be used with a bug fixed linux kernel > 4.6.0, see borgbackup issue #907.
             os.posix_fadvise(fd, offset, len, advice)
         except OSError:
             # usually, posix_fadvise can't fail for us, but there seem to
@@ -161,7 +165,7 @@ class SyncFile:
         mode = "xb" if binary else "x"  # x -> raise FileExists exception in open() if file exists already
         self.path = path
         if fd is None:
-            self.f = open(path, mode=mode)  # python file object
+            self.f = open(str(path), mode=mode)  # python file object
         else:
             self.f = os.fdopen(fd, mode=mode)
         self.fd = self.f.fileno()  # OS-level fd
@@ -194,7 +198,7 @@ class SyncFile:
 
         dirname = None
         try:
-            dirname = os.path.dirname(self.path)
+            dirname = Path(self.path).parent
             self.sync()
         finally:
             self.f.close()
@@ -222,8 +226,9 @@ class SaveFile:
     def __init__(self, path, binary=False):
         self.binary = binary
         self.path = path
-        self.dir = os.path.dirname(path)
-        self.tmp_prefix = os.path.basename(path) + "-"
+        path_obj = Path(path)
+        self.dir = str(path_obj.parent)
+        self.tmp_prefix = path_obj.name + "-"
         self.tmp_fd = None  # OS-level fd
         self.tmp_fname = None  # full path/filename corresponding to self.tmp_fd
         self.f = None  # python-file-like SyncFile
@@ -269,7 +274,7 @@ def getfqdn(name=""):
     An empty argument is interpreted as meaning the local host.
     """
     name = name.strip()
-    if not name or name == "0.0.0.0":
+    if not name or name == "0.0.0.0":  # nosec B104:hardcoded_bind_all_interfaces
         name = socket.gethostname()
     try:
         addrs = socket.getaddrinfo(name, None, 0, socket.SOCK_DGRAM, 0, socket.AI_CANONNAME)

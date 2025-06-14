@@ -21,13 +21,13 @@ from .logger import create_logger
 logger = create_logger()
 
 from . import xattr
-from .chunker import get_chunker, Chunk
+from .chunkers import get_chunker, Chunk
 from .cache import ChunkListEntry, build_chunkindex_from_repo, delete_chunkindex_cache
 from .crypto.key import key_factory, UnsupportedPayloadError
 from .compress import CompressionSpec
 from .constants import *  # NOQA
 from .crypto.low_level import IntegrityError as IntegrityErrorBase
-from .helpers import BackupError, BackupRaceConditionError
+from .helpers import BackupError, BackupRaceConditionError, BackupItemExcluded
 from .helpers import BackupOSError, BackupPermissionError, BackupFileNotFoundError, BackupIOError
 from .hashindex import ChunkIndex, ChunkIndexEntry
 from .helpers import HardLinkManager
@@ -351,7 +351,7 @@ class ChunkBuffer:
         self.packer = msgpack.Packer()
         self.chunks = []
         self.key = key
-        self.chunker = get_chunker(*chunker_params, seed=self.key.chunk_seed, sparse=False)
+        self.chunker = get_chunker(*chunker_params, key=self.key, sparse=False)
         self.saved_chunks_len = None
 
     def add(self, item):
@@ -1185,6 +1185,18 @@ class ChunksProcessor:
                 stats.show_progress(item=item, dt=0.2)
 
 
+def maybe_exclude_by_attr(item):
+    if xattrs := item.get("xattrs"):
+        apple_excluded = xattrs.get(b"com.apple.metadata:com_apple_backup_excludeItem")
+        linux_excluded = xattrs.get(b"user.xdg.robots.backup")
+        if apple_excluded is not None or linux_excluded == b"true":
+            raise BackupItemExcluded
+
+    if flags := item.get("bsdflags"):
+        if flags & stat.UF_NODUMP:
+            raise BackupItemExcluded
+
+
 class FilesystemObjectProcessors:
     # When ported to threading, then this doesn't need chunker, cache, key any more.
     # process_file becomes a callback passed to __init__.
@@ -1215,7 +1227,7 @@ class FilesystemObjectProcessors:
         self.hlm = HardLinkManager(id_type=tuple, info_type=(list, type(None)))  # (dev, ino) -> chunks or None
         self.stats = Statistics(output_json=log_json, iec=iec)  # threading: done by cache (including progress)
         self.cwd = os.getcwd()
-        self.chunker = get_chunker(*chunker_params, seed=key.chunk_seed, sparse=sparse)
+        self.chunker = get_chunker(*chunker_params, key=key, sparse=sparse)
 
     @contextmanager
     def create_helper(self, path, st, status=None, hardlinkable=True, strip_prefix=None):
@@ -1243,6 +1255,7 @@ class FilesystemObjectProcessors:
                 hl_chunks = chunks
             item.hlid = self.hlm.hardlink_id_from_inode(ino=st.st_ino, dev=st.st_dev)
         yield item, status, hardlinked, hl_chunks
+        maybe_exclude_by_attr(item)
         self.add_item(item, stats=self.stats)
         if update_map:
             # remember the hlid of this fs object and if the item has chunks,
@@ -1370,6 +1383,8 @@ class FilesystemObjectProcessors:
                 with backup_io("fstat"):
                     st = stat_update_check(st, os.fstat(fd))
                 item.update(self.metadata_collector.stat_simple_attrs(st, path, fd=fd))
+                item.update(self.metadata_collector.stat_ext_attrs(st, path, fd=fd))
+                maybe_exclude_by_attr(item)  # check early, before processing all the file content
                 is_special_file = is_special(st.st_mode)
                 if is_special_file:
                     # we process a special file like a regular file. reflect that in mode,
@@ -1461,7 +1476,6 @@ class FilesystemObjectProcessors:
                     if not changed_while_backup:
                         status = None  # we already called print_file_status
                 self.stats.nfiles += 1
-                item.update(self.metadata_collector.stat_ext_attrs(st, path, fd=fd))
                 item.get_size(memorize=True)
                 return status
 
@@ -1488,7 +1502,7 @@ class TarfileObjectProcessors:
         self.print_file_status = file_status_printer or (lambda *args: None)
 
         self.stats = Statistics(output_json=log_json, iec=iec)  # threading: done by cache (including progress)
-        self.chunker = get_chunker(*chunker_params, seed=key.chunk_seed, sparse=False)
+        self.chunker = get_chunker(*chunker_params, key=key, sparse=False)
         self.hlm = HardLinkManager(id_type=str, info_type=list)  # path -> chunks
 
     @contextmanager
@@ -2311,7 +2325,7 @@ class ArchiveRecreater:
         target.process_file_chunks = ChunksProcessor(
             cache=self.cache, key=self.key, add_item=target.add_item, rechunkify=target.recreate_rechunkify
         ).process_file_chunks
-        target.chunker = get_chunker(*target.chunker_params, seed=self.key.chunk_seed, sparse=False)
+        target.chunker = get_chunker(*target.chunker_params, key=self.key, sparse=False)
         return target
 
     def create_target_archive(self, name):

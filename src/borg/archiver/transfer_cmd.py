@@ -2,7 +2,7 @@ import argparse
 
 from ._common import with_repository, with_other_repository, Highlander
 from ..archive import Archive, cached_hash, DownloadPipeline
-from ..chunker import get_chunker
+from ..chunkers import get_chunker
 from ..compress import CompressionSpec
 from ..constants import *  # NOQA
 from ..crypto.key import uses_same_id_hash, uses_same_chunker_secret
@@ -41,7 +41,7 @@ def transfer_chunks(
         file = ChunkIteratorFileWrapper(chunk_iterator)
 
         # Create a chunker with the specified parameters
-        chunker = get_chunker(*chunker_params, seed=archive.key.chunk_seed, sparse=False)
+        chunker = get_chunker(*chunker_params, key=archive.key, sparse=False)
         for chunk in chunker.chunkify(file):
             if not dry_run:
                 chunk_id, data = cached_hash(chunk, archive.key.id_hash)

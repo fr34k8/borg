@@ -144,8 +144,8 @@ Compatibility notes:
 Change Log 2.x
 ==============
 
-Version 2.0.0b17 (2025-05-23)
------------------------------
+Version 2.0.0b18 (not released yet)
+-----------------------------------
 
 Please note:
 
@@ -153,6 +153,57 @@ Beta releases are only for testing on NEW repos - do not use for production.
 
 For upgrade and compatibility hints, please also read the section "Upgrade Notes"
 above.
+
+New features:
+
+- new "buzhash64" chunker, init bh table using a 256bit key derived from ID key
+- serve: add --permissions option as an alternative to BORG_REPO_PERMISSIONS env var
+- create: auto-exclude items based on xattrs or NODUMP, see #4972
+
+  no options yet, just hardcoded macOS and Linux xattrs.
+  removed the --exclude-nodump option, it is also done automagically now.
+
+  also: create: read stat attrs, xattrs, ACLs early, before file contents.
+
+Other changes:
+
+- support Python 3.14
+- msgpack: allow 1.1.1
+- msgpack version check: ignore "rc" or other version elements
+- add derive_key to derive new keys from existing key material
+- fish: fix archive name completion
+- refactor: modularize tests
+- refactor: use pathlib.Path
+- refactor the chunkers, #8882 #8883:
+
+  - transform buzhash chunker C code to Cython
+  - split concerns into FileFMAPReader, FileReader, Chunker*:
+
+    - FileFMAPReader reads blocks from the input file, supporting sparse
+      files and fmaps.
+    - FileReader uses FileFMAPReader to fill its buffer and offers clients a
+      `.read(size)` method so they can read pieces of the data.
+    - both chunkers now use the FileReader/FileFMAPReader code
+  - split code and test module into packages
+- ChunkerFixed: add fixed chunker tests to selftest
+- ChunkerFixed: do not assert on short header read
+- Chunker: use safe_fadvise
+- ChunkerParams: reject even window size for buzhash, #8868
+- tests / CI:
+
+  - CI: add bandit, a security-oriented static analysis tool
+  - CI: disable windows as the file:// repo URLs are still broken on windows.
+  - tests: tox: use native pyproject.toml configuration
+  - more chunker-related tests
+- docs:
+
+  - add docs for serve --permissions / BORG_REPO_PERMISSIONS
+  - borg-serve: simplify example of env in authorized_keys, #8318
+  - fix mistyped CVE number
+
+
+Version 2.0.0b17 (2025-05-23)
+-----------------------------
 
 New features:
 

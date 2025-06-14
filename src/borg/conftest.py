@@ -14,7 +14,7 @@ from borg.archiver import Archiver  # noqa: E402
 from borg.testsuite import has_lchflags, has_llfuse, has_pyfuse3  # noqa: E402
 from borg.testsuite import are_symlinks_supported, are_hardlinks_supported, is_utime_fully_supported  # noqa: E402
 from borg.testsuite.archiver import BORG_EXES
-from borg.testsuite.platform_test import fakeroot_detected  # noqa: E402
+from borg.testsuite.platform.platform_test import fakeroot_detected  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -57,7 +57,7 @@ def pytest_report_header(config, start_path):
 def set_env_variables():
     os.environ["BORG_CHECK_I_KNOW_WHAT_I_AM_DOING"] = "YES"
     os.environ["BORG_DELETE_I_KNOW_WHAT_I_AM_DOING"] = "YES"
-    os.environ["BORG_PASSPHRASE"] = "waytooeasyonlyfortests"
+    os.environ["BORG_PASSPHRASE"] = "waytooeasyonlyfortests"  # nosec B105
     os.environ["BORG_SELFTEST"] = "disabled"
 
 
@@ -103,7 +103,8 @@ def archiver(tmp_path, set_env_variables):
     os.environ["BORG_KEYS_DIR"] = archiver.keys_path
     os.environ["BORG_CACHE_DIR"] = archiver.cache_path
     os.mkdir(archiver.input_path)
-    os.chmod(archiver.input_path, 0o777)  # avoid troubles with fakeroot / FUSE
+    # avoid troubles with fakeroot / FUSE:
+    os.chmod(archiver.input_path, 0o777)  # nosec B103
     os.mkdir(archiver.output_path)
     os.mkdir(archiver.keys_path)
     os.mkdir(archiver.cache_path)

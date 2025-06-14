@@ -12,7 +12,7 @@ from ...helpers import flags_noatime, flags_normal
 from .. import has_lchflags, llfuse
 from .. import changedir, no_selinux, same_ts_ns
 from .. import are_symlinks_supported, are_hardlinks_supported, are_fifos_supported
-from ..platform_test import fakeroot_detected
+from ..platform.platform_test import fakeroot_detected
 from . import RK_ENCRYPTION, cmd, assert_dirs_equal, create_regular_file, create_src_archive, open_archive, src_file
 from . import requires_hardlinks, _extract_hardlinks_setup, fuse_mount, create_test_files, generate_archiver_tests
 
@@ -78,8 +78,8 @@ def test_fuse(archivers, request):
     cmd(archiver, "repo-create", RK_ENCRYPTION)
     create_test_files(archiver.input_path)
     have_noatime = has_noatime("input/file1")
-    cmd(archiver, "create", "--exclude-nodump", "--atime", "archive", "input")
-    cmd(archiver, "create", "--exclude-nodump", "--atime", "archive2", "input")
+    cmd(archiver, "create", "--atime", "archive", "input")
+    cmd(archiver, "create", "--atime", "archive2", "input")
     if has_lchflags:
         # remove the file that we did not back up, so input and output become equal
         os.remove(os.path.join("input", "flagfile"))
