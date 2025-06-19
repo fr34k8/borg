@@ -15,6 +15,7 @@ class ServeMixIn:
             restrict_to_paths=args.restrict_to_paths,
             restrict_to_repositories=args.restrict_to_repositories,
             use_socket=args.use_socket,
+            permissions=args.permissions,
         ).serve()
 
     def build_parser_serve(self, subparsers, common_parser, mid_common_parser):
@@ -37,6 +38,18 @@ class ServeMixIn:
         Please note that `borg serve` does not support giving a specific repository via the
         `--repo` option or `BORG_REPO` environment variable. It is always the borg client which
         specifies the repo to use when talking to `borg serve`.
+
+        The --permissions option allows enforcing repository permissions:
+
+        - `all`: All permissions are granted (default, permissions system is not used)
+        - `no-delete`: Allow reading and writing, disallow deleting and overwriting data.
+          New archives can be created, existing archives can not be deleted. New chunks can
+          be added, existing chunks can not be deleted or overwritten.
+        - `write-only`: Allow writing, disallow reading data.
+          New archives can be created, existing archives can not be read.
+          New chunks can be added, existing chunks can not be read, deleted or overwritten.
+        - `read-only`: Allow reading, disallow writing or deleting data.
+          Existing archives can be read, but no archives can be created or deleted.
         """
         )
         subparser = subparsers.add_parser(
@@ -70,4 +83,10 @@ class ServeMixIn:
             "PATH needs to point directly at a repository location. "
             "PATH may be an empty directory or the last element of PATH may not exist, in which case "
             "the client may initialize a repository there.",
+        )
+        subparser.add_argument(
+            "--permissions",
+            dest="permissions",
+            choices=["all", "no-delete", "write-only", "read-only"],
+            help="Set repository permission mode. Overrides BORG_REPO_PERMISSIONS environment variable.",
         )
