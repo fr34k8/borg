@@ -164,12 +164,13 @@ class RepositoryServer:  # pragma: no cover
         "store_move",
     )
 
-    def __init__(self, restrict_to_paths, restrict_to_repositories, use_socket):
+    def __init__(self, restrict_to_paths, restrict_to_repositories, use_socket, permissions=None):
         self.repository = None
         self.RepoCls = None
         self.rpc_methods = ("open", "close", "negotiate")
         self.restrict_to_paths = restrict_to_paths
         self.restrict_to_repositories = restrict_to_repositories
+        self.permissions = permissions
         # This flag is parsed from the serve command line via Archiver.do_serve,
         # i.e. it reflects local system policy and generally ranks higher than
         # whatever the client wants, except when initializing a new repository
@@ -375,9 +376,10 @@ class RepositoryServer:  # pragma: no cover
                     break
             else:
                 raise PathNotAllowed(path)
-        self.repository = self.RepoCls(
-            path, create, lock_wait=lock_wait, lock=lock, exclusive=exclusive, send_log_cb=self.send_queued_log
-        )
+        kwargs = dict(lock_wait=lock_wait, lock=lock, exclusive=exclusive, send_log_cb=self.send_queued_log)
+        if not v1_or_v2:
+            kwargs["permissions"] = self.permissions
+        self.repository = self.RepoCls(path, create, **kwargs)
         self.repository.__enter__()  # clean exit handled by serve() method
         return self.repository.id
 
@@ -574,7 +576,9 @@ class RemoteRepository:
                 borg_cmd = self.ssh_cmd(location) + borg_cmd
             logger.debug("SSH command line: %s", borg_cmd)
             # we do not want the ssh getting killed by Ctrl-C/SIGINT because it is needed for clean shutdown of borg.
-            self.p = Popen(borg_cmd, bufsize=0, stdin=PIPE, stdout=PIPE, stderr=PIPE, env=env, preexec_fn=ignore_sigint)
+            self.p = Popen(
+                borg_cmd, bufsize=0, stdin=PIPE, stdout=PIPE, stderr=PIPE, env=env, preexec_fn=ignore_sigint
+            )  # nosec B603
             self.stdin_fd = self.p.stdin.fileno()
             self.stdout_fd = self.p.stdout.fileno()
             self.stderr_fd = self.p.stderr.fileno()
