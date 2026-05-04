@@ -24,7 +24,7 @@ logger = create_logger()
 from .archiver._common import build_matcher, build_filter
 from .archive import Archive, get_item_uid_gid
 from .hashindex import FuseVersionsIndex
-from .helpers import daemonize, daemonizing, signal_handler, bin_to_hex
+from .helpers import daemonize, daemonizing, signal_handler, bin_to_hex, Error
 from .helpers import HardLinkManager
 from .helpers import msgpack
 from .helpers.lrucache import LRUCache
@@ -510,8 +510,16 @@ class borgfs(hlfuse.Operations, FuseBackend):
         dir_gid = self.gid_forced if self.gid_forced is not None else self.default_gid
         dir_user = uid2user(dir_uid)
         dir_group = gid2group(dir_gid)
-        assert isinstance(dir_user, str)
-        assert isinstance(dir_group, str)
+        if not isinstance(dir_user, str):
+            raise Error(
+                f"uid {dir_uid} can not be resolved to a username. "
+                f"Please check that the corresponding user exists or do not specify a uid mount option."
+            )
+        if not isinstance(dir_group, str):
+            raise Error(
+                f"gid {dir_gid} can not be resolved to a group name. "
+                f"Please check that the corresponding group exists or do not specify a gid mount option."
+            )
         dir_mode = 0o40755 & ~self.umask
         self.default_dir = Item(
             mode=dir_mode, mtime=int(time.time() * 1e9), user=dir_user, group=dir_group, uid=dir_uid, gid=dir_gid
