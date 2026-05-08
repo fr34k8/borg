@@ -40,7 +40,6 @@ def pretty_print(msg, items):
             print(f"???({item})")
 
 
-# @pytest.mark.skipif(not fs_supports_sparse(), reason="filesystem does not support sparse files")
 @pytest.mark.parametrize(
     "fname, sparse_map, header_size, sparse",
     [
