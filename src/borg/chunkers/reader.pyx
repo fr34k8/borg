@@ -327,7 +327,12 @@ class FileReader:
 
         # Determine the allocation type of the resulting chunk
         if has_data:
-            # If any chunk was CH_DATA, the result is CH_DATA
+            # If any chunk was CH_DATA, check if the result is all zeros.
+            # This can happen when a large CH_DATA block (read at read_size granularity)
+            # contains both real data and zero-filled regions, and we are slicing out
+            # a zero-filled portion at the block_size granularity.
+            if zeros.startswith(result):
+                return Chunk(None, size=bytes_read, allocation=CH_ALLOC)
             return Chunk(bytes(result), size=bytes_read, allocation=CH_DATA)
         elif has_hole:
             # If any chunk was CH_HOLE (and none were CH_DATA), the result is CH_HOLE
