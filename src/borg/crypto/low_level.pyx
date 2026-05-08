@@ -492,16 +492,28 @@ cdef class _AEAD_BASE:
         cdef int aoffset = self.aad_offset
         cdef int alen = hlen - aoffset
         cdef int aadlen = len(aad)
-        cdef unsigned char *odata = <unsigned char *>PyMem_Malloc(hlen + self.mac_len +
-                                                                  ilen + self.cipher_blk_len)
-        if not odata:
-            raise MemoryError
-        cdef int olen = 0
+        cdef Py_buffer idata
+        cdef bint idata_acquired = False
+        cdef Py_buffer hdata
+        cdef bint hdata_acquired = False
+        cdef Py_buffer aadata
+        cdef bint aadata_acquired = False
+        cdef unsigned char *odata = NULL
+        cdef int olen
         cdef int offset
-        cdef Py_buffer idata = ro_buffer(data)
-        cdef Py_buffer hdata = ro_buffer(header)
-        cdef Py_buffer aadata = ro_buffer(aad)
+
         try:
+            odata = <unsigned char *>PyMem_Malloc(hlen + self.mac_len +
+                                                  ilen + self.cipher_blk_len)
+            if not odata:
+                raise MemoryError
+
+            idata = ro_buffer(data)
+            idata_acquired = True
+            hdata = ro_buffer(header)
+            hdata_acquired = True
+            aadata = ro_buffer(aad)
+            aadata_acquired = True
             offset = 0
             for i in range(hlen):
                 odata[offset+i] = header[i]
@@ -528,10 +540,14 @@ cdef class _AEAD_BASE:
             self.blocks = block_count
             return odata[:offset]
         finally:
-            PyMem_Free(odata)
-            PyBuffer_Release(&hdata)
-            PyBuffer_Release(&idata)
-            PyBuffer_Release(&aadata)
+            if odata:
+                PyMem_Free(odata)
+            if hdata_acquired:
+                PyBuffer_Release(&hdata)
+            if idata_acquired:
+                PyBuffer_Release(&idata)
+            if aadata_acquired:
+                PyBuffer_Release(&aadata)
 
     def decrypt(self, envelope, aad=b''):
         """
@@ -548,14 +564,23 @@ cdef class _AEAD_BASE:
         cdef int aoffset = self.aad_offset
         cdef int alen = hlen - aoffset
         cdef int aadlen = len(aad)
-        cdef unsigned char *odata = <unsigned char *>PyMem_Malloc(ilen + self.cipher_blk_len)
-        if not odata:
-            raise MemoryError
-        cdef int olen = 0
+        cdef Py_buffer idata
+        cdef bint idata_acquired = False
+        cdef Py_buffer aadata
+        cdef bint aadata_acquired = False
+        cdef unsigned char *odata = NULL
+        cdef int olen
         cdef int offset
-        cdef Py_buffer idata = ro_buffer(envelope)
-        cdef Py_buffer aadata = ro_buffer(aad)
+
         try:
+            odata = <unsigned char *>PyMem_Malloc(ilen + self.cipher_blk_len)
+            if not odata:
+                raise MemoryError
+
+            idata = ro_buffer(envelope)
+            idata_acquired = True
+            aadata = ro_buffer(aad)
+            aadata_acquired = True
             if not EVP_DecryptInit_ex(self.ctx, self.cipher(), NULL, NULL, NULL):
                 raise CryptoError('EVP_DecryptInit_ex failed')
             if not EVP_CIPHER_CTX_ctrl(self.ctx, EVP_CTRL_AEAD_SET_IVLEN, self.iv_len, NULL):
@@ -581,9 +606,12 @@ cdef class _AEAD_BASE:
             self.blocks = self.block_count(offset)
             return odata[:offset]
         finally:
-            PyMem_Free(odata)
-            PyBuffer_Release(&idata)
-            PyBuffer_Release(&aadata)
+            if odata:
+                PyMem_Free(odata)
+            if idata_acquired:
+                PyBuffer_Release(&idata)
+            if aadata_acquired:
+                PyBuffer_Release(&aadata)
 
     def block_count(self, length):
         return num_cipher_blocks(length, self.cipher_blk_len)
