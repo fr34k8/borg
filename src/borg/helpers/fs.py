@@ -11,6 +11,11 @@ from pathlib import Path
 
 import platformdirs
 
+try:
+    import pwd  # POSIX only
+except ImportError:
+    pwd = None  # win32?
+
 from .errors import Error
 
 from .process import prepare_subprocess_env
@@ -48,24 +53,67 @@ def ensure_dir(path, mode=stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO, pretty_dea
 def get_base_dir(*, legacy=False):
     """Get home directory / base directory for Borg:
 
-    - BORG_BASE_DIR, if set
-    - HOME, if set
-    - ~$USER, if USER is set
-    - ~
+    Legacy:
+
+    Preference order (while being robust against misleading environment when invoked via mount helpers):
+
+    - BORG_BASE_DIR, if set.
+    - HOME, if it refers to the current (effective) user's home.
+    - ~$USER, if USER is set.
+    - The home directory of the current (effective) user from the password database (POSIX).
+    - ~ (platform default expansion).
+
+    Not legacy:
+
+    Just return BORG_BASE_DIR.
     """
     if legacy:
-        base_dir = os.environ.get("BORG_BASE_DIR") or os.environ.get("HOME")
-        # Path.expanduser() behaves differently for '~' and '~someuser' as
-        # parameters: when called with an explicit username, the possibly set
-        # environment variable HOME is no longer respected. So we have to check if
-        # it is set and only expand the user's home directory if HOME is unset.
-        if not base_dir:
-            base_dir = str(Path(f"~{os.environ.get('USER', '')}").expanduser())
+        # 1. Explicit override always wins.
+        base_dir = os.environ.get("BORG_BASE_DIR")
+        if base_dir:
+            return base_dir
+
+        # 2. Prefer HOME, but be robust against mount helpers that set HOME to root's home for non-root users.
+        home_env = os.environ.get("HOME")
+        if home_env and pwd is not None:  # POSIX only
+            try:
+                # If HOME points to root's home but we are not root, prefer the invoking user's home.
+                root_home = pwd.getpwuid(0).pw_dir
+                uid = getattr(os, "geteuid", os.getuid)()
+                if uid != 0 and os.path.abspath(home_env) == os.path.abspath(root_home):
+                    try:
+                        user_home = pwd.getpwuid(uid).pw_dir
+                    except Exception:
+                        user_home = None
+                    if user_home:
+                        return user_home
+                    # if we couldn't figure out the user's home, ignore HOME and continue with fallbacks
+                    home_env = None
+            except Exception:  # nosec B110
+                # If anything goes wrong determining root's home, keep HOME as-is.
+                pass
+
+        if home_env:
+            return home_env
+
+        # 3. Fall back to ~$USER if set (keeps previous behavior and existing tests).
+        user = os.environ.get("USER")
+        if user:
+            return os.path.expanduser("~%s" % user)
+
+        # 4. POSIX: use pw_home for the current uid; otherwise finally fallback to ~.
+        if pwd is not None:
+            try:
+                uid = getattr(os, "geteuid", os.getuid)()
+                return pwd.getpwuid(uid).pw_dir
+            except Exception:  # nosec B110
+                pass
+
+        return os.path.expanduser("~")
     else:
         # we only care for BORG_BASE_DIR here, as it can be used to override the base dir
-        # and not use any more or less platform specific way to determine the base dir.
-        base_dir = os.environ.get("BORG_BASE_DIR")
-    return base_dir
+        # and not use any more or less platform-specific way to determine the base dir.
+        return os.environ.get("BORG_BASE_DIR")
 
 
 def join_base_dir(*paths, **kw):
