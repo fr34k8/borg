@@ -271,9 +271,9 @@ import fcntl as fcntl_mod
 def fdatasync(fd):
     """macOS fdatasync using F_FULLFSYNC for true data durability.
 
-    On macOS, os.fsync() only flushes to the drive's write cache.
-    fcntl F_FULLFSYNC flushes to persistent storage.
-    Falls back to os.fsync() if F_FULLFSYNC is not supported.
+    os.fsync() is an OS-level flush (kernel page cache -> drive write buffer).
+    F_FULLFSYNC additionally issues a HW-level flush (drive write buffer -> persistent storage).
+    Falls back to os.fsync() if F_FULLFSYNC is not supported (e.g. network fs).
     """
     try:
         fcntl_mod.fcntl(fd, fcntl_mod.F_FULLFSYNC)
