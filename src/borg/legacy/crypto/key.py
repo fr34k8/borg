@@ -3,7 +3,7 @@ from ...crypto.low_level import AES256_CTR_HMAC_SHA256, AES256_CTR_BLAKE2b
 from ...crypto.key import ID_HMAC_SHA_256, ID_BLAKE2b_256, AESKeyBase, FlexiKey
 
 
-class KeyfileKey(ID_HMAC_SHA_256, AESKeyBase, FlexiKey):
+class KeyfileKey(ID_HMAC_SHA_256, AESKeyBase, FlexiKey):  # type: ignore[misc]
     TYPES_ACCEPTABLE = {KeyType.KEYFILE, KeyType.REPO, KeyType.PASSPHRASE}
     TYPE = KeyType.KEYFILE
     NAME = "key file"
@@ -12,7 +12,7 @@ class KeyfileKey(ID_HMAC_SHA_256, AESKeyBase, FlexiKey):
     CIPHERSUITE = AES256_CTR_HMAC_SHA256
 
 
-class RepoKey(ID_HMAC_SHA_256, AESKeyBase, FlexiKey):
+class RepoKey(ID_HMAC_SHA_256, AESKeyBase, FlexiKey):  # type: ignore[misc]
     TYPES_ACCEPTABLE = {KeyType.KEYFILE, KeyType.REPO, KeyType.PASSPHRASE}
     TYPE = KeyType.REPO
     NAME = "repokey"
@@ -21,7 +21,7 @@ class RepoKey(ID_HMAC_SHA_256, AESKeyBase, FlexiKey):
     CIPHERSUITE = AES256_CTR_HMAC_SHA256
 
 
-class Blake2KeyfileKey(ID_BLAKE2b_256, AESKeyBase, FlexiKey):
+class Blake2KeyfileKey(ID_BLAKE2b_256, AESKeyBase, FlexiKey):  # type: ignore[misc]
     TYPES_ACCEPTABLE = {KeyType.BLAKE2KEYFILE, KeyType.BLAKE2REPO}
     TYPE = KeyType.BLAKE2KEYFILE
     NAME = "key file BLAKE2b"
@@ -30,7 +30,7 @@ class Blake2KeyfileKey(ID_BLAKE2b_256, AESKeyBase, FlexiKey):
     CIPHERSUITE = AES256_CTR_BLAKE2b
 
 
-class Blake2RepoKey(ID_BLAKE2b_256, AESKeyBase, FlexiKey):
+class Blake2RepoKey(ID_BLAKE2b_256, AESKeyBase, FlexiKey):  # type: ignore[misc]
     TYPES_ACCEPTABLE = {KeyType.BLAKE2KEYFILE, KeyType.BLAKE2REPO}
     TYPE = KeyType.BLAKE2REPO
     NAME = "repokey BLAKE2b"
