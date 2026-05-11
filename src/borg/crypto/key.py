@@ -29,7 +29,7 @@ from ..repoobj import RepoObj
 
 
 from .low_level import AES, bytes_to_int, num_cipher_blocks, hmac_sha256, blake2b_256
-from .low_level import AES256_CTR_HMAC_SHA256, AES256_CTR_BLAKE2b, AES256_OCB, CHACHA20_POLY1305
+from .low_level import AES256_OCB, CHACHA20_POLY1305
 from . import low_level
 
 # workaround for lost passphrase or key in "authenticated" or "authenticated-blake2" mode
@@ -729,40 +729,10 @@ class FlexiKey:
             raise TypeError("Unsupported borg key storage type")
 
 
-class KeyfileKey(ID_HMAC_SHA_256, AESKeyBase, FlexiKey):
-    TYPES_ACCEPTABLE = {KeyType.KEYFILE, KeyType.REPO, KeyType.PASSPHRASE}
-    TYPE = KeyType.KEYFILE
-    NAME = "key file"
-    ARG_NAME = "keyfile"
-    STORAGE = KeyBlobStorage.KEYFILE
-    CIPHERSUITE = AES256_CTR_HMAC_SHA256
-
-
-class RepoKey(ID_HMAC_SHA_256, AESKeyBase, FlexiKey):
-    TYPES_ACCEPTABLE = {KeyType.KEYFILE, KeyType.REPO, KeyType.PASSPHRASE}
-    TYPE = KeyType.REPO
-    NAME = "repokey"
-    ARG_NAME = "repokey"
-    STORAGE = KeyBlobStorage.REPO
-    CIPHERSUITE = AES256_CTR_HMAC_SHA256
-
-
-class Blake2KeyfileKey(ID_BLAKE2b_256, AESKeyBase, FlexiKey):
-    TYPES_ACCEPTABLE = {KeyType.BLAKE2KEYFILE, KeyType.BLAKE2REPO}
-    TYPE = KeyType.BLAKE2KEYFILE
-    NAME = "key file BLAKE2b"
-    ARG_NAME = "keyfile-blake2"
-    STORAGE = KeyBlobStorage.KEYFILE
-    CIPHERSUITE = AES256_CTR_BLAKE2b
-
-
-class Blake2RepoKey(ID_BLAKE2b_256, AESKeyBase, FlexiKey):
-    TYPES_ACCEPTABLE = {KeyType.BLAKE2KEYFILE, KeyType.BLAKE2REPO}
-    TYPE = KeyType.BLAKE2REPO
-    NAME = "repokey BLAKE2b"
-    ARG_NAME = "repokey-blake2"
-    STORAGE = KeyBlobStorage.REPO
-    CIPHERSUITE = AES256_CTR_BLAKE2b
+# legacy imports placed after FlexiKey/AESKeyBase/KeyBase so those names are already
+# in the partial module when legacy/crypto/key.py imports them back during circular load
+from ..legacy.crypto.key import KeyfileKey, RepoKey, Blake2KeyfileKey, Blake2RepoKey  # noqa: E402
+from ..legacy.crypto.key import LEGACY_KEY_TYPES  # noqa: E402
 
 
 class AuthenticatedKeyBase(AESKeyBase, FlexiKey):
@@ -1001,14 +971,6 @@ class Blake2CHPORepoKey(ID_BLAKE2b_256, AEADKeyBase, FlexiKey):
     STORAGE = KeyBlobStorage.REPO
     CIPHERSUITE = CHACHA20_POLY1305
 
-
-LEGACY_KEY_TYPES = (
-    # legacy (AES-CTR based) crypto
-    KeyfileKey,
-    RepoKey,
-    Blake2KeyfileKey,
-    Blake2RepoKey,
-)
 
 AVAILABLE_KEY_TYPES = (
     # these are available encryption modes for new repositories
