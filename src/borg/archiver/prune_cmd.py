@@ -170,7 +170,8 @@ class PruneMixIn:
 
         to_delete = set(archives) - set(keep)
         if not args.json:
-            logger.info("Found %d archives.", len(archives))
+            logger.info("Repository contains %d archives.", manifest.archives.count())
+            logger.info("Applying rules to the matching %d archives...", len(archives))
             logger.info("Keeping %d archives, pruning %d archives.", len(keep), len(to_delete))
         if args.json:
             output_data = []
