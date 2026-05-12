@@ -101,6 +101,8 @@ cdef uint32_t _buzhash(const unsigned char* data, size_t len, const uint32_t* h)
     """Calculate the buzhash of the given data."""
     cdef uint32_t i
     cdef uint32_t sum = 0, imod
+    if len == 0:
+        return 0
     for i in range(len - 1, 0, -1):
         imod = i & 0x1f
         sum ^= BARREL_SHIFT(h[data[0]], imod)

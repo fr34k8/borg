@@ -78,6 +78,8 @@ cdef uint64_t _buzhash64(const unsigned char* data, size_t len, const uint64_t* 
     """Calculate the buzhash of the given data."""
     cdef uint64_t i
     cdef uint64_t sum = 0, imod
+    if len == 0:
+        return 0
     for i in range(len - 1, 0, -1):
         imod = i & 0x3f
         sum ^= BARREL_SHIFT64(h[data[0]], imod)
