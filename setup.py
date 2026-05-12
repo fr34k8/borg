@@ -55,7 +55,6 @@ buzhash64_source = "src/borg/chunkers/buzhash64.pyx"
 reader_source = "src/borg/chunkers/reader.pyx"
 hashindex_source = "src/borg/hashindex.pyx"
 item_source = "src/borg/item.pyx"
-checksums_source = "src/borg/checksums.pyx"
 platform_posix_source = "src/borg/platform/posix.pyx"
 platform_linux_source = "src/borg/platform/linux.pyx"
 platform_syncfilerange_source = "src/borg/platform/syncfilerange.pyx"
@@ -72,7 +71,6 @@ cython_sources = [
     reader_source,
     hashindex_source,
     item_source,
-    checksums_source,
     platform_posix_source,
     platform_linux_source,
     platform_syncfilerange_source,
@@ -163,8 +161,6 @@ if not on_rtd:
         dict(extra_compile_args=cflags),
     )
 
-    checksums_ext_kwargs = members_appended(dict(sources=[checksums_source]), dict(extra_compile_args=cflags))
-
     if sys.platform == "linux":
         linux_ext_kwargs = members_appended(
             dict(sources=[platform_linux_source]),
@@ -184,7 +180,6 @@ if not on_rtd:
         Extension("borg.chunkers.buzhash", [buzhash_source], extra_compile_args=cflags),
         Extension("borg.chunkers.buzhash64", [buzhash64_source], extra_compile_args=cflags),
         Extension("borg.chunkers.reader", [reader_source], extra_compile_args=cflags),
-        Extension("borg.checksums", **checksums_ext_kwargs),
     ]
 
     posix_ext = Extension("borg.platform.posix", [platform_posix_source], extra_compile_args=cflags)

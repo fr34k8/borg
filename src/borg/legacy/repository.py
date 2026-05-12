@@ -11,6 +11,7 @@ from configparser import ConfigParser
 from functools import partial
 from itertools import islice
 from collections.abc import Callable
+from zlib import crc32
 
 import xxhash
 
@@ -28,7 +29,6 @@ from ..logger import create_logger
 from ..manifest import Manifest, NoManifestError
 from ..platform import SaveFile, SyncFile, sync_dir, safe_fadvise
 from ..repoobj import RepoObj
-from ..checksums import crc32
 from ..crypto.file_integrity import IntegrityCheckedFile, FileIntegrityError
 
 logger = create_logger(__name__)

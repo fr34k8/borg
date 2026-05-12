@@ -216,7 +216,7 @@ class BenchmarkMixIn:
                 print(f"{spec:<24} {format_file_size(size):<10} {dt:.3f}s")
 
         from xxhash import xxh64
-        from ..checksums import crc32
+        from zlib import crc32
 
         if not args.json:
             print("Non-cryptographic checksums / hashes ===========================")
