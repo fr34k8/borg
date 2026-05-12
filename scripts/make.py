@@ -561,7 +561,6 @@ src/borg/chunkers/buzhash64.pyx
 src/borg/chunkers/reader.pyx
 src/borg/hashindex.pyx
 src/borg/item.pyx
-src/borg/checksums.pyx
 src/borg/platform/posix.pyx
 src/borg/platform/linux.pyx
 src/borg/platform/syncfilerange.pyx
