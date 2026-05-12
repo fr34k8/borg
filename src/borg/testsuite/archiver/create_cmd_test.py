@@ -1002,6 +1002,25 @@ def test_create_dotslash_hack(archivers, request):
     assert "secondB/thirdB" in output
 
 
+def test_create_dotslash_hack_root_metadata(archivers, request):
+    """Test that the slashdot hack archives the source directory metadata as the archive root."""
+    archiver = request.getfixturevalue(archivers)
+    os.makedirs(os.path.join(archiver.input_path, "first", "subdir"))
+    create_regular_file(archiver.input_path, "first/file1", contents=b"hello")
+    cmd(archiver, "repo-create", RK_ENCRYPTION)
+    cmd(archiver, "create", "test", "input/first/./")  # slashdot hack
+    output = cmd(archiver, "list", "test")
+    # the root directory "." must be in the archive (this was the bug in #9534).
+    lines = output.splitlines()
+    assert lines[0].endswith(" .")
+    # children of the slashdot target must be archived.
+    assert "subdir" in output
+    assert "file1" in output
+    # parent directories must NOT be in the archive.
+    assert "input" not in output
+    assert "first" not in output
+
+
 def test_log_json(archivers, request):
     archiver = request.getfixturevalue(archivers)
     create_test_files(archiver.input_path)
