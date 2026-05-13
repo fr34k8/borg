@@ -736,6 +736,22 @@ class CreateMixIn:
         - 'i' = backup data was read from standard input (stdin)
         - '?' = missing status code (if you see this, please file a bug report!)
 
+        Errors and (incomplete) archives
+        ++++++++++++++++++++++++++++++++
+
+        If an error happens during archive creation (e.g. some file could not be read
+        due to a permission error or some other OS error), borg will log a warning or
+        an error (depending on the type of issue) and continue with the next item.
+
+        At the end of the backup, if there were any such issues, borg will exit with
+        a non-zero exit code (usually 1 for warnings).
+
+        **The archive is still saved even if warnings or errors occurred**, but it will
+        only contain the data borg was able to read successfully. It is like a
+        checkpoint (see below), but with a user-given name.
+
+        You should always check the backup logs and the exit code of the borg command.
+
         Reading backup data from stdin
         ++++++++++++++++++++++++++++++
 
