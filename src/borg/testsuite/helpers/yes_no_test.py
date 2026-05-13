@@ -7,21 +7,21 @@ from .. import FakeInputs
 def test_yes_input():
     inputs = list(TRUISH)
     input = FakeInputs(inputs)
-    for i in inputs:
+    while input.available():
         assert yes(input=input)
     inputs = list(FALSISH)
     input = FakeInputs(inputs)
-    for i in inputs:
+    while input.available():
         assert not yes(input=input)
 
 
 def test_yes_input_defaults():
     inputs = list(DEFAULTISH)
     input = FakeInputs(inputs)
-    for i in inputs:
+    while input.available():
         assert yes(default=True, input=input)
     input = FakeInputs(inputs)
-    for i in inputs:
+    while input.available():
         assert not yes(default=False, input=input)
 
 
