@@ -252,6 +252,7 @@ rst_plain_text_references = {
     "borg_placeholders": '"borg help placeholders"',
     "key_files": "Internals -> Data structures and file formats -> Key files",
     "borg_key_export": "borg key export --help",
+    "internals_hashindex": "Internals -> Data structures and file formats -> HashIndex",
 }
 
 

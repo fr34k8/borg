@@ -157,8 +157,9 @@ class RepoCreateMixIn:
         .. nanorst: inline-replace
 
         `none` mode uses no encryption and no authentication. You are advised NOT to use this mode
-        as it would expose you to all sorts of issues (DoS, confidentiality, tampering, ...) in
-        case of malicious activity in the repository.
+        as it would expose you to a Denial-of-Service risk (due to how the :ref:`internals_hashindex`
+        works) and other issues (confidentiality, tampering, ...) in case of malicious activity
+        in the repository.
 
         If you do **not** want to encrypt the contents of your backups, but still want to detect
         malicious tampering, use an `authenticated` mode. It is like `repokey` minus encryption.
