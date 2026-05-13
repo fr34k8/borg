@@ -147,7 +147,7 @@ def test_key_export_repokey(archivers, request):
         repo_key2 = AESOCBRepoKey(repository)
         repo_key2.load(None, Passphrase.env_passphrase())
 
-    assert repo_key2.crypt_key == repo_key2.crypt_key
+    assert repo_key2.crypt_key == repo_key.crypt_key
 
 
 def test_key_export_qr(archivers, request):
