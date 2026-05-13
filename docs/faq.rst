@@ -301,6 +301,7 @@ storage systems. To avoid or detect such issues, you should:
 - Periodically run ``borg check --verify-data REPO`` to verify that the
   stored data still matches its checksums. Note that this cannot detect
   if the data was already "garbage" when it was first stored.
+
 .. _faq-integrityerror:
 
 I get an IntegrityError or similar - what now?
