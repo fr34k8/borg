@@ -71,7 +71,7 @@ def filter_archives_by_date(archives, older=None, newer=None, oldest=None, newes
 
 
 @runtime_checkable
-class ArchivesInterface(Protocol):
+class ArchivesInterface(Protocol):  # pragma: no cover
     """
     Structural interface that both Archives and LegacyArchives must satisfy.
 
@@ -122,7 +122,6 @@ class Archives:
     Manage the list of archives for a Borg 2.x repository.
 
     Each archive has a separate entry in borgstore at archives/<hex-id>.
-    The manifest blob itself carries an empty archives dict.
     """
 
     def __init__(self, repository, manifest):
@@ -310,7 +309,6 @@ class Archives:
                     )
                 return archive_info
         return None  # id not in store, or archive metadata blob missing from repo
-        # TODO: add a test that calls get_by_id() with a non-existent id and asserts None is returned
 
     def create(self, name, id, ts, *, overwrite=False):
         assert isinstance(name, str)
@@ -318,8 +316,7 @@ class Archives:
         if isinstance(ts, datetime):
             ts = ts.isoformat(timespec="microseconds")
         assert isinstance(ts, str)
-        # overwrite is not enforced: archive IDs are content-addressed so a genuine
-        # duplicate (same ID, different intent) cannot occur in a correct implementation.
+        # we only create a directory entry, its name points to the archive item:
         self.repository.store_store(f"archives/{bin_to_hex(id)}", b"")
 
     def delete_by_id(self, id):

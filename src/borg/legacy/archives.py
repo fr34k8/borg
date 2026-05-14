@@ -2,7 +2,7 @@
 
 In Borg 1.x the list of archives is embedded directly in the manifest blob
 as a dict {name: {"id": bytes, "time": str}}.  This class manages that dict.
-Used by ``borg transfer --from-borg1`` and ``borg serve`` (serving v1 clients).
+Used by ``borg transfer --from-borg1``.
 
 This module can be removed entirely when Borg 1.x support is dropped.
 """
